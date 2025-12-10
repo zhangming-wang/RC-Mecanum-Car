@@ -1,0 +1,20 @@
+[submodule "ESP32_motion/lib/ESP32Encoder"]
+	path = ESP32_motion/lib/ESP32Encoder
+	url = https://github.com/madhephaestus/ESP32Encoder.git
+	branch = master
+[submodule "ESP32_motion/lib/micro_ros_platformio"]
+	path = ESP32_motion/lib/micro_ros_platformio
+	url = https://github.com/micro-ROS/micro_ros_platformio.git
+	branch = main
+[submodule "micro_ros/micro_ros_setup"]
+	path = micro_ros/micro_ros_setup
+	url = https://github.com/micro-ROS/micro_ros_setup.git
+	branch = humble
+[submodule "ros2_master/src/micro-ROS-Agent"]
+	path = ros2_master/src/micro-ROS-Agent
+	url = https://github.com/micro-ROS/micro-ROS-Agent.git
+	branch = humble
+[submodule "ros2_master/src/micro_ros_msgs"]
+	path = ros2_master/src/micro_ros_msgs
+	url = https://github.com/micro-ROS/micro_ros_msgs.git
+	branch = humble
