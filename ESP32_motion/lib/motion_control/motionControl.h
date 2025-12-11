@@ -78,8 +78,6 @@ public:
     void move_absolute_euler_pose(const EulerPose &eulerPose);
     void move_relative_euler_pose(const EulerPose &eulerPose);
 
-    String get_http_data();
-
     void update_target_max_speed();
 
     void set_motor_enable_flags(uint8_t flags);

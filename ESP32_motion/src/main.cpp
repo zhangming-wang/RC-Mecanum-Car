@@ -11,7 +11,7 @@ enum CommunicationType {
     BLUETOOTH,
 };
 
-CommunicationType communication_type = CommunicationType::WIFI;
+CommunicationType communication_type = CommunicationType::BLUETOOTH;
 
 void (*serial_print)(const std::string &) = _serial_print;
 

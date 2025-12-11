@@ -16,6 +16,7 @@ BluetoothSlave::BluetoothSlave() {
 BluetoothSlave::~BluetoothSlave() {}
 
 void BluetoothSlave::init(const std::string &name) {
+    motionControl_ = &MotionControl::get_instance();
     if (SerialBT_) {
         SerialBT_->begin(String(name.c_str()));
         Serial.println("蓝牙已启动，等待连接...");
@@ -39,13 +40,57 @@ void BluetoothSlave::stop_task() {
     }
 }
 
-void BluetoothSlave::read_cmd() {
+void BluetoothSlave::handle_cmd() {
     if (SerialBT_->available()) {
-        String cmd = SerialBT_->readStringUntil('\n');
+        String cmdStr = SerialBT_->readStringUntil('\n');
         SerialBT_->flush(); // 清空缓冲区
-        cmd.trim();         // 去除空格/换行 读取单个指令字符
-        Serial.print("收到控制指令：");
-        Serial.println(cmd);
+        cmdStr.trim();      // 去除空格/换行 读取单个指令字符
+        // Serial.print("收到控制指令：");
+        // Serial.println(cmdStr);
+
+        std::map<std::string, std::string> cmd_map;
+        for (int begin_pos = 0, split_pos = 0; begin_pos < cmdStr.length(); begin_pos++) {
+            std::string valid_cmd;
+            if (cmdStr[begin_pos] == ',') {
+                valid_cmd = std::string(cmdStr.substring(split_pos, begin_pos).c_str());
+                split_pos = begin_pos + 1;
+            }
+            if (begin_pos == cmdStr.length() - 1) {
+                valid_cmd = std::string(cmdStr.substring(split_pos, begin_pos + 1).c_str());
+            }
+            if (!valid_cmd.empty()) {
+                int pos = valid_cmd.find(':');
+                if (pos != -1) {
+                    cmd_map[valid_cmd.substr(0, pos)] = valid_cmd.substr(pos + 1, valid_cmd.size() - pos - 1);
+                }
+            }
+        }
+
+        auto cmd = cmd_map.find("type");
+        if (cmd != cmd_map.end() && motionControl_) {
+            if (cmd->second == "move") {
+                geometry_msgs__msg__Twist twist;
+                for (auto cmd : cmd_map) {
+                    if (cmd.first == "linear_x") {
+                        twist.linear.x = std::stod(cmd.second);
+                    } else if (cmd.first == "linear_y") {
+                        twist.linear.y = std::stod(cmd.second);
+                    } else if (cmd.first == "angular_z") {
+                        twist.angular.z = std::stod(cmd.second);
+                    }
+                }
+                motionControl_->start_move(twist);
+            } else if (cmd->second == "set") {
+                double speed_percent = 1.0;
+                for (auto cmd : cmd_map) {
+                    if (cmd.first == "spd_percent") {
+                        speed_percent = std::stod(cmd.second);
+                        ;
+                    }
+                }
+                motionControl_->set_speed_percent(speed_percent);
+            }
+        }
     }
 }
 
@@ -57,7 +102,7 @@ void bluetooth_slave_loop(void *args) {
                 bluetoothSlave->is_connected = true;
                 Serial.println("蓝牙设备已连接");
             }
-            bluetoothSlave->read_cmd();
+            bluetoothSlave->handle_cmd();
             vTaskDelay(pdMS_TO_TICKS(10));
         } else {
             if (bluetoothSlave->is_connected == true) {

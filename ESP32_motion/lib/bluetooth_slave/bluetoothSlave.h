@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BluetoothSerial.h"
+#include "motionControl.h"
 #include <Arduino.h>
 #include <memory>
 #include <string>
@@ -26,7 +27,9 @@ private:
     bool enable_task_run = false;
     bool is_connected = false;
 
-    void read_cmd();
+    MotionControl *motionControl_ = nullptr;
+
+    void handle_cmd();
 };
 
 void bluetooth_slave_loop(void *args);
