@@ -1,7 +1,9 @@
 #include "gamepadwidget.h"
+#include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QTouchEvent>
 #include <QtMath>
 
 GamepadWidget::GamepadWidget(QWidget *parent)
@@ -147,13 +149,74 @@ void GamepadWidget::mouseReleaseEvent(QMouseEvent *e) {
     Q_UNUSED(e);
     if (m_pressedLeft) {
         m_pressedLeft = false;
+        m_leftTouchId = -1;
         m_knobLeft = QPointF(0, 0);
         emit releasedXY();
     }
     if (m_pressedRight) {
         m_pressedRight = false;
+        m_rightTouchId = -1;
         m_knobZ = 0.0;
         emit releasedZ();
     }
     update();
+}
+
+bool GamepadWidget::event(QEvent *event) {
+    if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd) {
+        auto *te = static_cast<QTouchEvent *>(event);
+        const auto points = te->points();
+        for (const auto &pt : points) {
+            const QPoint pos = pt.position().toPoint();
+            const qint64 id = pt.id();
+            switch (pt.state()) {
+            case QEventPoint::Pressed: {
+                if (QLineF(pos, m_centerLeft).length() <= m_radiusLeft * 1.1) {
+                    if (m_leftTouchId == -1)
+                        m_leftTouchId = id;
+                    m_pressedLeft = true;
+                    updateCircleFromPos(pos);
+                } else if (capsuleRect().contains(pos)) {
+                    if (m_rightTouchId == -1)
+                        m_rightTouchId = id;
+                    m_pressedRight = true;
+                    updateCapsuleFromPos(pos);
+                }
+                break;
+            }
+            case QEventPoint::Updated: {
+                if (id == m_leftTouchId && m_pressedLeft) {
+                    updateCircleFromPos(pos);
+                } else if (id == m_rightTouchId && m_pressedRight) {
+                    updateCapsuleFromPos(pos);
+                }
+                break;
+            }
+            case QEventPoint::Released: {
+                if (id == m_leftTouchId) {
+                    m_leftTouchId = -1;
+                    if (m_pressedLeft) {
+                        m_pressedLeft = false;
+                        m_knobLeft = QPointF(0, 0);
+                        emit releasedXY();
+                    }
+                } else if (id == m_rightTouchId) {
+                    m_rightTouchId = -1;
+                    if (m_pressedRight) {
+                        m_pressedRight = false;
+                        m_knobZ = 0.0;
+                        emit releasedZ();
+                    }
+                }
+                update();
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        event->accept();
+        return true;
+    }
+    return QWidget::event(event);
 }

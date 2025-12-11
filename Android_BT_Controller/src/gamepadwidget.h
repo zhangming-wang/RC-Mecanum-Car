@@ -21,6 +21,7 @@ protected:
     void mousePressEvent(QMouseEvent *e) override;
     void mouseMoveEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;
+    bool event(QEvent *event) override;
 
 private:
     // 左侧圆形摇杆
@@ -46,6 +47,7 @@ private:
     qreal m_radiusLeft{90.0};
     QPointF m_knobLeft; // 相对中心
     bool m_pressedLeft{false};
+    qint64 m_leftTouchId{-1};
 
     // 右侧胶囊摇杆状态
     QRectF m_capsule;
@@ -53,4 +55,5 @@ private:
     qreal m_capsuleMargin{20.0};
     qreal m_knobZ{0.0}; // -1..1 映射到 -100..100
     bool m_pressedRight{false};
+    qint64 m_rightTouchId{-1};
 };
