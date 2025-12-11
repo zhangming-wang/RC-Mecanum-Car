@@ -21,19 +21,21 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
     const qreal edgeMargin = 50.0;    // 边缘留白
     const qreal spacingInside = 20.0; // 区域内部留白
 
-    // 左右区域分配：两侧控件宽高固定，spacer为剩余水平空间（expanding），垂直居中
-    const qreal totalW = w - 2 * edgeMargin;
-    const qreal leftW = m_leftFixedW;
-    const qreal rightW = m_rightFixedW;
-    const qreal spacerW = qMax<qreal>(0.0, totalW - leftW - rightW);
-    const qreal leftX = edgeMargin;
-    const qreal rightX = edgeMargin + leftW + spacerW;
-    const qreal leftH = m_leftFixedH;
-    const qreal rightH = m_rightFixedH;
-    const qreal leftY = (h - leftH) / 2.0;
-    const qreal rightY = (h - rightH) / 2.0;
-    m_leftArea = QRectF(leftX, leftY, leftW, leftH);
-    m_rightArea = QRectF(rightX, rightY, rightW, rightH);
+    // 上下两个圆形区域：大小一致，水平居中；与上下边框距离一致
+    const qreal circleSize = qMin<qreal>(m_leftFixedH, m_leftFixedW);
+    const qreal topW = circleSize;
+    const qreal topH = circleSize;
+    const qreal bottomW = circleSize;
+    const qreal bottomH = circleSize;
+    // 计算上下等距：edgeMargin 到顶部圆，上下圆之间的 spacer，到底部圆到底部边框的 edgeMargin
+    const qreal totalH = h - 2 * edgeMargin;
+    const qreal spacerH = qMax<qreal>(0.0, totalH - topH - bottomH);
+    const qreal topY = edgeMargin;
+    const qreal bottomY = edgeMargin + topH + spacerH;
+    const qreal topX = (w - topW) / 2.0;
+    const qreal bottomX = (w - bottomW) / 2.0;
+    m_leftArea = QRectF(topX, topY, topW, topH);
+    m_rightArea = QRectF(bottomX, bottomY, bottomW, bottomH);
 
     // 左侧圆形摇杆绘制
     {
@@ -58,38 +60,28 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         p.drawEllipse(knobCenter, knobR, knobR);
     }
 
-    // 右侧胶囊摇杆绘制（水平，仅左右）
+    // 下方圆形摇杆绘制（与上方同尺寸，仅上下控制）
     {
-        const qreal rw = m_rightArea.width();
-        const qreal rh = m_rightArea.height();
-        // 胶囊高度为左圆直径的一半（即左半径数值），并使用与左侧相同的内部留白spacingInside
-        const qreal capsuleH = qMin(rh, m_radiusLeft);
-        const qreal capsuleW = rw - 2 * spacingInside; // 左右留白一致
-        m_capsuleRadius = capsuleH / 2.0;
-        const qreal x = m_rightArea.left() + spacingInside;
-        const qreal y = m_rightArea.center().y() - capsuleH / 2.0;
-        m_capsule = QRectF(x, y, capsuleW, capsuleH);
+        m_radiusLeft = qMax<qreal>(8.0, qMin(m_rightArea.width(), m_rightArea.height()) / 2.0 - spacingInside);
+        QPointF centerBottom(m_rightArea.center().x(), m_rightArea.center().y());
 
-        // 胶囊外观
-        QPainterPath path;
-        QRectF r = m_capsule;
-        path.addRoundedRect(r, m_capsuleRadius, m_capsuleRadius);
         p.setPen(QPen(QColor(180, 180, 180), 3));
         p.setBrush(QColor(60, 60, 60));
-        p.drawPath(path);
+        p.drawEllipse(centerBottom, m_radiusLeft, m_radiusLeft);
 
-        // 中线
         p.setPen(QPen(QColor(120, 120, 120), 1));
-        p.drawLine(QPointF(r.left(), r.center().y()), QPointF(r.right(), r.center().y()));
+        // 仅绘制一条竖直中线辅助
+        p.drawLine(QPointF(centerBottom.x(), centerBottom.y() - m_radiusLeft), QPointF(centerBottom.x(), centerBottom.y() + m_radiusLeft));
 
-        // 旋钮位置：根据 m_knobZ (-1..1) 映射到胶囊内
-        // 中心圆尺寸与左侧一致
         const qreal knobR = m_radiusLeft * 0.35;
-        const qreal cx = r.left() + (m_knobZ + 1.0) * 0.5 * r.width();
-        const qreal cy = r.center().y();
+        // 下方圆仅上下移动：x 固定为圆心，y 根据 m_knobZ 映射
+        const qreal cy = centerBottom.y() + (m_knobZ)*m_radiusLeft; // 顶部-1时向上
+        const qreal cx = centerBottom.x();
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(255, 140, 0));
         p.drawEllipse(QPointF(cx, cy), knobR, knobR);
+        // 存储方便命中测试
+        m_capsule = QRectF(centerBottom.x() - m_radiusLeft, centerBottom.y() - m_radiusLeft, m_radiusLeft * 2, m_radiusLeft * 2);
     }
 }
 
@@ -118,9 +110,9 @@ QRectF GamepadWidget::capsuleRect() const {
 
 void GamepadWidget::updateCapsuleFromPos(const QPoint &pos) {
     const QRectF r = capsuleRect();
-    const qreal x = qBound(r.left(), (qreal)pos.x(), r.right());
-    // 将 x 映射为 -1..1
-    const qreal t = (x - r.left()) / r.width();
+    const qreal y = qBound(r.top(), (qreal)pos.y(), r.bottom());
+    // 仅上下映射为 -1..1：上 -1，下 +1
+    const qreal t = (y - r.top()) / r.height();
     m_knobZ = t * 2.0 - 1.0;
 
     const qreal z = qBound(-1.0, m_knobZ, 1.0);

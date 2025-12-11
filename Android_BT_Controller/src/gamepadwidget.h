@@ -36,10 +36,10 @@ private:
     QRectF m_leftArea;  // 左侧区域（圆形摇杆）
     QRectF m_rightArea; // 右侧区域（胶囊摇杆）
     // 固定控件尺寸 + 中间expanding留白：形状不随容器高度/宽度变化
-    qreal m_leftFixedW{400.0};  // 左控件目标宽度
-    qreal m_leftFixedH{400.0};  // 左控件目标高度（圆形区域）
-    qreal m_rightFixedW{400.0}; // 右控件目标宽度
-    qreal m_rightFixedH{200.0}; // 右控件目标高度（胶囊区域）
+    qreal m_leftFixedW{200.0};  // 左控件目标宽度
+    qreal m_leftFixedH{200.0};  // 左控件目标高度（圆形区域）
+    qreal m_rightFixedW{200.0}; // 右控件目标宽度
+    qreal m_rightFixedH{100.0}; // 右控件目标高度（胶囊区域）
 
     // 左侧圆形摇杆状态
     QPointF m_centerLeft;

@@ -9,7 +9,7 @@ BluetoothClient::BluetoothClient(QObject *parent)
             this, &BluetoothClient::onDeviceDiscovered);
     connect(m_agent, &QBluetoothDeviceDiscoveryAgent::finished,
             this, &BluetoothClient::onDiscoveryFinished);
-    connect(m_agent, QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(&QBluetoothDeviceDiscoveryAgent::error),
+    connect(m_agent, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
             this, [this](QBluetoothDeviceDiscoveryAgent::Error) { emit error(m_agent->errorString()); });
 }
 
@@ -17,7 +17,6 @@ void BluetoothClient::startDiscovery() {
     m_devices.clear();
     if (m_agent->isActive())
         m_agent->stop();
-    m_agent->setInquiryType(QBluetoothDeviceDiscoveryAgent::GeneralUnlimitedInquiry);
     m_agent->start();
 }
 
@@ -65,7 +64,7 @@ void BluetoothClient::connectToAddress(const QString &address) {
         return;
     }
 
-    if (m_socket && m_socket->state() != QBluetoothSocket::UnconnectedState) {
+    if (m_socket && m_socket->state() != QBluetoothSocket::SocketState::UnconnectedState) {
         m_socket->disconnectFromService();
         m_socket.reset(nullptr);
     }
@@ -74,11 +73,11 @@ void BluetoothClient::connectToAddress(const QString &address) {
     connect(m_socket.data(), &QBluetoothSocket::connected, this, &BluetoothClient::onSocketConnected);
     connect(m_socket.data(), &QBluetoothSocket::disconnected, this, &BluetoothClient::onSocketDisconnected);
     connect(m_socket.data(), &QBluetoothSocket::readyRead, this, &BluetoothClient::onSocketReadyRead);
-    connect(m_socket.data(), QOverload<QBluetoothSocket::SocketError>::of(&QBluetoothSocket::error),
+    connect(m_socket.data(), &QBluetoothSocket::errorOccurred,
             this, &BluetoothClient::onSocketError);
 
     // 通过 SPP UUID 连接
-    const QBluetoothUuid spp(QBluetoothUuid::SerialPort);
+    const QBluetoothUuid spp(QBluetoothUuid::ServiceClassUuid::SerialPort);
     m_socket->connectToService(chosen.address(), spp);
 }
 
@@ -89,11 +88,11 @@ void BluetoothClient::disconnectFromDevice() {
 }
 
 bool BluetoothClient::isConnected() const {
-    return m_socket && m_socket->state() == QBluetoothSocket::ConnectedState;
+    return m_socket && m_socket->state() == QBluetoothSocket::SocketState::ConnectedState;
 }
 
 void BluetoothClient::send(const QByteArray &data) {
-    if (!m_socket || m_socket->state() != QBluetoothSocket::ConnectedState)
+    if (!m_socket || m_socket->state() != QBluetoothSocket::SocketState::ConnectedState)
         return;
     m_socket->write(data);
 }
