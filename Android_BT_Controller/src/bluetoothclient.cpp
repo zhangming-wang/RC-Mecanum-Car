@@ -5,15 +5,24 @@
 BluetoothClient::BluetoothClient(QObject *parent)
     : QObject(parent) {
     m_agent = new QBluetoothDeviceDiscoveryAgent(this);
+    m_check_timer = new QTimer(this);
+    m_ESP32_bluetooth_name = QString::fromUtf8(esp32_bluetooth_slave_name);
+
     connect(m_agent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
             this, &BluetoothClient::onDeviceDiscovered);
     connect(m_agent, &QBluetoothDeviceDiscoveryAgent::finished,
             this, &BluetoothClient::onDiscoveryFinished);
     connect(m_agent, &QBluetoothDeviceDiscoveryAgent::errorOccurred,
             this, [this](QBluetoothDeviceDiscoveryAgent::Error) { emit error(m_agent->errorString()); });
+
+    connect(m_check_timer, &QTimer::timeout, this, &BluetoothClient::connectToESP32);
+    connectToESP32();
+    m_check_timer->setInterval(1000);
+    m_check_timer->start();
 }
 
 void BluetoothClient::startDiscovery() {
+    qDebug() << "Starting Bluetooth device discovery...";
     m_devices.clear();
     if (m_agent->isActive())
         m_agent->stop();
@@ -42,9 +51,19 @@ void BluetoothClient::onDeviceDiscovered(const QBluetoothDeviceInfo &info) {
     m_devices.push_back(info);
     qDebug() << "Discovered device:" << info.name() << info.address().toString();
     emit deviceFound(info);
+
+    // 自动连接匹配名称的设备
+    if (!m_ESP32_bluetooth_name.isEmpty() && info.name() == m_ESP32_bluetooth_name) {
+        qDebug() << "Auto-connecting to target name:" << m_ESP32_bluetooth_name;
+        // 停止继续扫描，直接连接
+        if (m_agent->isActive())
+            m_agent->stop();
+        connectToAddress(info.address().toString());
+    }
 }
 
 void BluetoothClient::onDiscoveryFinished() {
+    qDebug() << "Bluetooth device discovery finished.";
     emit discoveryFinished();
 }
 
@@ -115,4 +134,20 @@ void BluetoothClient::onSocketReadyRead() {
 void BluetoothClient::onSocketError(QBluetoothSocket::SocketError) {
     if (m_socket)
         emit error(m_socket->errorString());
+}
+
+void BluetoothClient::connectToESP32() {
+    if (m_socket && m_socket->state() == QBluetoothSocket::SocketState::ConnectedState)
+        return;
+
+    qDebug() << "attempting to connect to " << m_ESP32_bluetooth_name << "......";
+
+    for (const auto &d : m_devices) {
+        if (d.name() == m_ESP32_bluetooth_name) {
+            connectToAddress(d.address().toString());
+            return;
+        }
+    }
+    if (!m_agent->isActive())
+        startDiscovery();
 }

@@ -1,10 +1,13 @@
 #pragma once
 
+#include "../common/settings.h" // For esp32_bluetooth_slave_name
 #include <QBluetoothDeviceDiscoveryAgent>
 #include <QBluetoothDeviceInfo>
 #include <QBluetoothSocket>
 #include <QList>
 #include <QObject>
+#include <QString>
+#include <QTimer>
 
 class BluetoothClient : public QObject {
     Q_OBJECT
@@ -45,4 +48,9 @@ private:
     QBluetoothDeviceDiscoveryAgent *m_agent{nullptr};
     QList<QBluetoothDeviceInfo> m_devices;
     QScopedPointer<QBluetoothSocket> m_socket;
+    QString m_ESP32_bluetooth_name;
+
+    QTimer *m_check_timer;
+
+    void connectToESP32();
 };
