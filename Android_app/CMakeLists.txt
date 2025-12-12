@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_PREFIX_PATH "/opt/Qt/6.5.3/android_arm64_v8a" ${CMAKE_PREFIX_PATH})
+# set(CMAKE_PREFIX_PATH "/opt/Qt/6.5.3/android_arm64_v8a" ${CMAKE_PREFIX_PATH})
 
-project(RosCar VERSION 0.1 LANGUAGES CXX)
+project(ControlApp VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -14,19 +14,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
-
-# # 按目录组织源文件
-file(GLOB_RECURSE main_window_src "main_window/*")
-file(GLOB_RECURSE http_client_src "http_client/*")
-set(main_SRC main.cpp)
-
-set(PROJECT_SOURCES
-    ${main_window_src}
-    ${http_client_src}
-    ${main_SRC}
+file(GLOB_RECURSE PROJECT_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
 )
+
+find_package(QT NAMES Qt6)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Bluetooth)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${PROJECT_NAME}
@@ -51,7 +44,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Bluetooth)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

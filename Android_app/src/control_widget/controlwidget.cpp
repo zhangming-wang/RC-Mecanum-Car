@@ -1,7 +1,7 @@
-#include "mainwindow.h"
+#include "controlwidget.h"
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow),
+ControlWidget::ControlWidget(QWidget *parent)
+    : QWidget(parent), ui(new Ui::ControlWidget),
       httpClient_(new HttpClient(this)) {
     ui->setupUi(this);
 
@@ -78,17 +78,17 @@ MainWindow::MainWindow(QWidget *parent)
             background: #0078d7;
         })");
 
-    connect(httpClient_, &HttpClient::sendConnectStatus, this, &MainWindow::onHttpStatusChanged);
-    connect(httpClient_, &HttpClient::sendData, this, &MainWindow::onRecvData);
+    connect(httpClient_, &HttpClient::sendConnectStatus, this, &ControlWidget::onHttpStatusChanged);
+    connect(httpClient_, &HttpClient::sendData, this, &ControlWidget::onRecvData);
     onRecvData(QJsonObject());
     httpClient_->start_timer();
 }
 
-MainWindow::~MainWindow() {
+ControlWidget::~ControlWidget() {
     delete ui;
 }
 
-void MainWindow::onHttpStatusChanged(bool connect) {
+void ControlWidget::onHttpStatusChanged(bool connect) {
     if (connect) {
         ui->label_connect_status->setStyleSheet(QString("background-color:green;color:white;font-size:%1px;").arg(this->font().pointSize()));
         ui->label_connect_status->setText("已连接");
@@ -99,7 +99,7 @@ void MainWindow::onHttpStatusChanged(bool connect) {
         setEnabled(false);
     }
 }
-void MainWindow::onRecvData(QJsonObject jsonData) {
+void ControlWidget::onRecvData(QJsonObject jsonData) {
     if (jsonData.keys().contains("speed_percent") && speed_slider_is_pressed_ == false) {
         ui->horizontalSlider_speed_percent->blockSignals(true);
         ui->horizontalSlider_speed_percent->setValue(jsonData["speed_percent"].toDouble() * ui->horizontalSlider_speed_percent->maximum());
@@ -139,6 +139,6 @@ void MainWindow::onRecvData(QJsonObject jsonData) {
     ui->label_euler_pose_status->setText(text);
 }
 
-void MainWindow::_updateSPeedPercentLabel(double percent) {
+void ControlWidget::_updateSPeedPercentLabel(double percent) {
     ui->label_speed_percent->setText(QString::number(percent * 100, 'f', 1) + "%");
 }

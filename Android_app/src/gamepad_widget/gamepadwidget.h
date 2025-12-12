@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../bluetooth_client/bluetoothclient.h"
 #include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -10,6 +11,7 @@
 #include <QTouchEvent>
 #include <QWidget>
 #include <QtMath>
+
 class GamepadWidget : public QWidget {
     Q_OBJECT
 public:
@@ -31,6 +33,13 @@ protected:
     void mouseMoveEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;
     bool event(QEvent *event) override;
+
+private slots:
+    void onJoystickMoved(double x, double y);
+    void onJoystickReleased();
+    void onYawMoved(double z);
+    void onYawReleased();
+    void onSpeedChanged(double percent);
 
 private:
     // 上方圆形摇杆（XY）
@@ -78,4 +87,6 @@ private:
     int m_indicatorPad{0};
     QColor m_indicatorOnColor{QColor(0, 200, 70)};
     QColor m_indicatorOffColor{QColor(110, 110, 110)};
+
+    BluetoothClient *m_bt{nullptr};
 };

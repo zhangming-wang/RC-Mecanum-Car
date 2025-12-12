@@ -3,8 +3,11 @@
 GamepadWidget::GamepadWidget(QWidget *parent)
     : QWidget(parent) {
     setAttribute(Qt::WA_AcceptTouchEvents, true);
-    // 中间速度滑块（水平，0-100%）
+
+    m_bt = new BluetoothClient(this);
     m_speedSlider = new QSlider(Qt::Horizontal, this);
+
+    // 中间速度滑块（水平，0-100%）
     m_speedSlider->setRange(0, 100);
     m_speedSlider->setValue(m_speedSlider->maximum());
     // 风格统一：深色轨道 + 高亮橙色滑块，圆角，与整体一致
@@ -33,6 +36,25 @@ GamepadWidget::GamepadWidget(QWidget *parent)
     connect(m_speedSlider, &QSlider::sliderReleased, this, [this]() {
         emit speedChanged(static_cast<double>(m_speedSlider->value()) / m_speedSlider->maximum());
     });
+
+    connect(m_bt, &BluetoothClient::connected, this, [this]() {
+        setConnected(true);
+    });
+    connect(m_bt, &BluetoothClient::disconnected, this, [this]() {
+        setConnected(false);
+    });
+    connect(m_bt, &BluetoothClient::error, this, [](const QString &msg) {
+        qWarning() << "Bluetooth error:" << msg;
+    });
+    connect(m_bt, &BluetoothClient::messageReceived, this, [](const QByteArray &data) {
+        qDebug() << "Received data:" << data;
+    });
+
+    connect(this, &GamepadWidget::movedXY, this, &GamepadWidget::onJoystickMoved);
+    connect(this, &GamepadWidget::releasedXY, this, &GamepadWidget::onJoystickReleased);
+    connect(this, &GamepadWidget::movedZ, this, &GamepadWidget::onYawMoved);
+    connect(this, &GamepadWidget::releasedZ, this, &GamepadWidget::onYawReleased);
+    connect(this, &GamepadWidget::speedChanged, this, &GamepadWidget::onSpeedChanged);
 
     // 断开时闪烁：每500ms翻转一次
     m_blinkTimer.setInterval(500);
@@ -311,4 +333,41 @@ void GamepadWidget::setConnected(bool connected) {
         m_blinkOn = false;
     }
     update();
+}
+
+void GamepadWidget::onJoystickMoved(double x, double y) {
+    if (!m_bt->isConnected())
+        return;
+
+    const QByteArray payload;
+    m_bt->send(payload);
+}
+
+void GamepadWidget::onJoystickReleased() {
+    if (!m_bt->isConnected())
+        return;
+
+    const QByteArray payload;
+    m_bt->send(payload);
+}
+
+void GamepadWidget::onYawMoved(double z) {
+    if (!m_bt->isConnected())
+        return;
+    const QByteArray payload;
+    m_bt->send(payload);
+}
+
+void GamepadWidget::onYawReleased() {
+    if (!m_bt->isConnected())
+        return;
+    const QByteArray payload;
+    m_bt->send(payload);
+}
+
+void GamepadWidget::onSpeedChanged(double percent) {
+    if (!m_bt->isConnected())
+        return;
+    const QByteArray payload;
+    m_bt->send(payload);
 }
