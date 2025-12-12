@@ -1,37 +1,71 @@
 #include "gamepadwidget.h"
 
+// 集中化UI参数，便于统一调整与提高可读性
+namespace {
+    // 计时/动画
+    constexpr int kBlinkIntervalMs = 500;
+
+    // 摇杆圆与按钮
+    constexpr qreal kMinCircleRadius = 8.0; // 圆形区域最小半径
+    constexpr qreal kKnobRatio = 0.35;      // 小圆按钮相对于半径的比例
+
+    // 状态指示器
+    constexpr int kIndicatorInnerPad = 4;     // 指示器内圈padding
+    constexpr int kIndicatorReserveExtra = 4; // 滑块区域为指示器额外预留的像素
+
+    // 滑块几何
+    constexpr int kSliderMinWidth = 240;  // 滑块最小宽度
+    constexpr int kSliderSidePadding = 8; // 滑块左右额外留白（相对可用空间）
+    constexpr int kSliderHeight = 48;     // 滑块高度
+    constexpr int kSliderLeftBias = 12;   // 滑块整体向左偏移（视觉微调）
+
+    // 滑块样式（样式表用）
+    constexpr int kGrooveHeight = 14;  // 轨道高度
+    constexpr int kHandleWidth = 40;   // 手柄宽度
+    constexpr int kHandleMarginY = 18; // 手柄上下外边距（负值扩大触区）
+    constexpr int kHandleRadius = 20;  // 手柄圆角
+} // namespace
+
 GamepadWidget::GamepadWidget(QWidget *parent)
     : QWidget(parent) {
     setAttribute(Qt::WA_AcceptTouchEvents, true);
 
     m_bt = new BluetoothClient(this);
     m_speedSlider = new QSlider(Qt::Horizontal, this);
+    // 让滑块自身接受触控并具备焦点，支持多指同时操作
+    m_speedSlider->setAttribute(Qt::WA_AcceptTouchEvents, true);
+    m_speedSlider->setFocusPolicy(Qt::StrongFocus);
+    m_speedSlider->setMouseTracking(true);
 
     // 中间速度滑块（水平，0-100%）
     m_speedSlider->setRange(0, 100);
     m_speedSlider->setValue(0);
-    // 风格统一：深色轨道 + 高亮橙色滑块，圆角，与整体一致
-    m_speedSlider->setStyleSheet(
-        "QSlider::groove:horizontal {\n"
-        "  height: 6px;\n"
-        "  background: #3c3c3c;\n"
-        "  border-radius: 3px;\n"
-        "}\n"
-        "QSlider::sub-page:horizontal {\n"
-        "  background: #0099ff;\n"
-        "  border-radius: 3px;\n"
-        "}\n"
-        "QSlider::add-page:horizontal {\n"
-        "  background: #3c3c3c;\n"
-        "  border-radius: 3px;\n"
-        "}\n"
-        "QSlider::handle:horizontal {\n"
-        "  background: #ff8c00;\n"
-        "  border: 2px solid #c56f00;\n"
-        "  width: 18px;\n"
-        "  margin: -8px 0;\n"
-        "  border-radius: 10px;\n"
-        "}\n");
+    // 风格统一：深色轨道 + 高亮橙色手柄，圆角（从集中常量生成，便于统一调整）
+    m_speedSlider->setStyleSheet(QString(
+                                     "QSlider::groove:horizontal {\n"
+                                     "  height: %1px;\n"
+                                     "  background: #3c3c3c;\n"
+                                     "  border-radius: 3px;\n"
+                                     "}\n"
+                                     "QSlider::sub-page:horizontal {\n"
+                                     "  background: #0099ff;\n"
+                                     "  border-radius: 3px;\n"
+                                     "}\n"
+                                     "QSlider::add-page:horizontal {\n"
+                                     "  background: #3c3c3c;\n"
+                                     "  border-radius: 3px;\n"
+                                     "}\n"
+                                     "QSlider::handle:horizontal {\n"
+                                     "  background: #ff8c00;\n"
+                                     "  border: 2px solid #c56f00;\n"
+                                     "  width: %2px;\n"
+                                     "  margin: -%3px 0;\n"
+                                     "  border-radius: %4px;\n"
+                                     "}\n")
+                                     .arg(kGrooveHeight)
+                                     .arg(kHandleWidth)
+                                     .arg(kHandleMarginY)
+                                     .arg(kHandleRadius));
 
     connect(m_speedSlider, &QSlider::sliderReleased, this, [this]() {
         emit speedChanged(static_cast<double>(m_speedSlider->value()) / m_speedSlider->maximum());
@@ -54,11 +88,13 @@ GamepadWidget::GamepadWidget(QWidget *parent)
     });
 
     connect(this, &GamepadWidget::movedXY, this, [this](double x, double y) { onMoveChanged(); });
+    connect(this, &GamepadWidget::releasedXY, this, [this]() { onMoveChanged(); });
     connect(this, &GamepadWidget::movedZ, this, [this](double z) { onMoveChanged(); });
+    connect(this, &GamepadWidget::releasedZ, this, [this]() { onMoveChanged(); });
     connect(this, &GamepadWidget::speedChanged, this, &GamepadWidget::onSpeedChanged);
 
-    // 断开时闪烁：每500ms翻转一次
-    m_blinkTimer.setInterval(500);
+    // 断开时闪烁
+    m_blinkTimer.setInterval(kBlinkIntervalMs);
     connect(&m_blinkTimer, &QTimer::timeout, this, [this]() {
         if (!m_connected) {
             m_blinkOn = !m_blinkOn;
@@ -101,7 +137,7 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         // 使用相同的内部留白 spacingInside
         const qreal maxRadiusX = m_topArea.width() / 2.0 - spacingInside;
         const qreal maxRadiusY = m_topArea.height() / 2.0 - spacingInside;
-        m_topRadius = qMax<qreal>(8.0, qMin(maxRadiusX, maxRadiusY));
+        m_topRadius = qMax<qreal>(kMinCircleRadius, qMin(maxRadiusX, maxRadiusY));
         m_topCenter = QPointF(m_topArea.center().x(), m_topArea.center().y());
 
         p.setPen(QPen(QColor(180, 180, 180), 3));
@@ -112,7 +148,7 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         p.drawLine(QPointF(m_topCenter.x() - m_topRadius, m_topCenter.y()), QPointF(m_topCenter.x() + m_topRadius, m_topCenter.y()));
         p.drawLine(QPointF(m_topCenter.x(), m_topCenter.y() - m_topRadius), QPointF(m_topCenter.x(), m_topCenter.y() + m_topRadius));
 
-        const qreal knobR = m_topRadius * 0.35; // 中心圆尺寸
+        const qreal knobR = m_topRadius * kKnobRatio; // 中心圆尺寸
         QPointF knobCenter = m_topCenter + m_knobXY;
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(0, 170, 255));
@@ -129,12 +165,13 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         const qreal spacerH = qMax<qreal>(0.0, totalH - topH - bottomH);
         const qreal spacerX = edgeMargin;
         // 预留右侧状态指示器空间，避免滑块遮挡
-        const int indicatorReserve = m_indicatorSize + m_indicatorPad + 8;
+        const int indicatorReserve = m_indicatorSize + kIndicatorReserveExtra; // 更贴右侧，仅保留极小空隙
         const qreal spacerW = w - 2 * edgeMargin - indicatorReserve;
         const qreal spacerY = edgeMargin + topH;
-        const int sliderW = qMax<int>(160, (int)spacerW - 40);
-        const int sliderH = 28;
-        const int sliderX = (int)(spacerX + (spacerW - sliderW) / 2);
+        const int sliderW = qMax<int>(kSliderMinWidth, (int)spacerW - kSliderSidePadding); // 明显加长，尽量利用中间空间
+        const int sliderH = kSliderHeight;                                                 // 显著增高，更易触控
+                                                                                           // 轻微左移，仍保持近似居中
+        const int sliderX = (int)(spacerX + (spacerW - sliderW) / 2) - kSliderLeftBias;
         const int sliderY = (int)(spacerY + (spacerH - sliderH) / 2);
         if (m_speedSlider && sliderW > 0 && spacerH > 0)
             m_speedSlider->setGeometry(sliderX, sliderY, sliderW, sliderH);
@@ -142,9 +179,9 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
 
     // 右侧连接状态指示器：圆形灯（恢复之前样式）
     {
-        const int indicatorSize = m_indicatorSize; // 小圆形指示灯尺寸
-        const int pad = m_indicatorPad;            // 与右侧边距偏移
-        const int x = w - m_edgeMargin - indicatorSize - pad;
+        const int indicatorSize = m_indicatorSize;                        // 小圆形指示灯尺寸
+        const int pad = 0;                                                // 继续靠右：不留额外偏移
+        const int x = w - indicatorSize - qMax(0, (int)m_edgeMargin / 2); // 较小边距，视觉更靠右
         const int y = (h - indicatorSize) / 2;
 
         // 外圈（灰色边框）
@@ -159,7 +196,7 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         QColor fill = m_connected ? greenOn : (m_blinkOn ? redOn : redOff);
         p.setPen(Qt::NoPen);
         p.setBrush(fill);
-        const qreal innerPad = 4.0;
+        const qreal innerPad = kIndicatorInnerPad;
         p.drawEllipse(QRectF(x + innerPad, y + innerPad, indicatorSize - innerPad * 2, indicatorSize - innerPad * 2));
     }
 
@@ -176,12 +213,12 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
         // 仅绘制一条竖直中线辅助
         p.drawLine(QPointF(centerBottom.x(), centerBottom.y() - bottomRadius), QPointF(centerBottom.x(), centerBottom.y() + bottomRadius));
 
-        const qreal knobR = bottomRadius * 0.35;
+        const qreal knobR = bottomRadius * kKnobRatio;
         // 下方圆仅上下移动：x 固定为圆心，y 根据 m_knobZ 映射
         const qreal cy = centerBottom.y() + (m_knobZ)*bottomRadius; // 顶部-1时向上
         const qreal cx = centerBottom.x();
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor(255, 140, 0));
+        p.setBrush(QColor(0, 170, 255));
         p.drawEllipse(QPointF(cx, cy), knobR, knobR);
         // 存储方便命中测试（下方圆形区域）
         m_bottomCircle = QRectF(centerBottom.x() - bottomRadius, centerBottom.y() - bottomRadius, bottomRadius * 2, bottomRadius * 2);
@@ -252,12 +289,15 @@ void GamepadWidget::mouseReleaseEvent(QMouseEvent *e) {
         m_pressedTop = false;
         m_topTouchId = -1;
         m_knobXY = QPointF(0, 0);
+        m_nx = 0;
+        m_ny = 0;
         emit releasedXY();
     }
     if (m_pressedBottom) {
         m_pressedBottom = false;
         m_bottomTouchId = -1;
         m_knobZ = 0.0;
+        m_nz = 0;
         emit releasedZ();
     }
     update();
@@ -267,6 +307,15 @@ bool GamepadWidget::event(QEvent *event) {
     if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd) {
         auto *te = static_cast<QTouchEvent *>(event);
         const auto points = te->points();
+        // 如果触点在速度滑块区域内，交给基类处理，让子控件(QSlider)接管事件
+        if (m_speedSlider) {
+            for (const auto &pt : points) {
+                const QPoint pos = pt.position().toPoint();
+                if (m_speedSlider->geometry().contains(pos)) {
+                    return QWidget::event(event);
+                }
+            }
+        }
         for (const auto &pt : points) {
             const QPoint pos = pt.position().toPoint();
             const qint64 id = pt.id();
@@ -299,6 +348,8 @@ bool GamepadWidget::event(QEvent *event) {
                     if (m_pressedTop) {
                         m_pressedTop = false;
                         m_knobXY = QPointF(0, 0);
+                        m_nx = 0;
+                        m_ny = 0;
                         emit releasedXY();
                     }
                 } else if (id == m_bottomTouchId) {
@@ -306,6 +357,7 @@ bool GamepadWidget::event(QEvent *event) {
                     if (m_pressedBottom) {
                         m_pressedBottom = false;
                         m_knobZ = 0.0;
+                        m_nz = 0;
                         emit releasedZ();
                     }
                 }
@@ -339,15 +391,20 @@ void GamepadWidget::setConnected(bool connected) {
 void GamepadWidget::onMoveChanged() {
     if (!m_bt->isConnected())
         return;
-    const QByteArray payload = "x:" + QByteArray::number(m_nx, 'f', 2) +
-                               ",y:" + QByteArray::number(m_ny, 'f', 2) +
-                               ",z:" + QByteArray::number(m_nz, 'f', 2);
+
+    if (!m_bt->readyToSend()) {
+        return; // 丢弃本次发送
+    }
+
+    const QByteArray payload = "x:" + QByteArray::number(-1 * m_ny, 'f', 3) +
+                               ",y:" + QByteArray::number(m_nx, 'f', 3) +
+                               ",z:" + QByteArray::number(-1 * m_nz, 'f', 3) + "\n";
     m_bt->send(payload);
 }
 
 void GamepadWidget::onSpeedChanged(double percent) {
     if (!m_bt->isConnected())
         return;
-    const QByteArray payload = "v:" + QByteArray::number(percent, 'f', 2);
+    const QByteArray payload = "v:" + QByteArray::number(percent, 'f', 3) + "\n";
     m_bt->send(payload);
 }

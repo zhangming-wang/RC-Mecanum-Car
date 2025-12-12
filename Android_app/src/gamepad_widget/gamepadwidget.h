@@ -11,6 +11,7 @@
 #include <QTouchEvent>
 #include <QWidget>
 #include <QtMath>
+#include<QDateTime>
 
 class GamepadWidget : public QWidget {
     Q_OBJECT

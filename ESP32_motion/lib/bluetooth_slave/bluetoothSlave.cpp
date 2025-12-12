@@ -43,8 +43,7 @@ void BluetoothSlave::stop_task() {
 void BluetoothSlave::handle_cmd() {
     if (SerialBT_->available()) {
         String cmdStr = SerialBT_->readStringUntil('\n');
-        SerialBT_->flush(); // 清空缓冲区
-        cmdStr.trim();      // 去除空格/换行 读取单个指令字符
+        cmdStr.trim(); // 去除空格/换行 读取单个指令字符
         // Serial.print("收到控制指令：");
         // Serial.println(cmdStr);
 
@@ -75,7 +74,7 @@ void BluetoothSlave::handle_cmd() {
                 } else if (cmd.first == "y") {
                     twist.linear.y = std::stod(cmd.second) * motionControl_->get_max_speed();
                 } else if (cmd.first == "z") {
-                    twist.angular.z = std::stod(cmd.second) * motionControl_->get_max_speed();
+                    twist.angular.z = std::stod(cmd.second) * motionControl_->get_max_angular();
                 } else if (cmd.first == "v") {
                     v_percent = std::stod(cmd.second);
                 }
@@ -99,7 +98,7 @@ void bluetooth_slave_loop(void *args) {
                 Serial.println("蓝牙设备已连接");
             }
             bluetoothSlave->handle_cmd();
-            vTaskDelay(pdMS_TO_TICKS(10));
+            // vTaskDelay(pdMS_TO_TICKS(10));
         } else {
             if (bluetoothSlave->is_connected == true) {
                 bluetoothSlave->is_connected = false;

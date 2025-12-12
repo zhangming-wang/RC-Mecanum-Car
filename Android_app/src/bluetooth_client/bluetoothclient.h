@@ -24,6 +24,7 @@ public:
 
     bool isConnected() const;
     bool isDiscovering() const;
+    bool readyToSend() const;
 
 public slots:
     void send(const QByteArray &data);

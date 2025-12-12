@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-# set(CMAKE_PREFIX_PATH "/opt/Qt/6.5.3/android_arm64_v8a" ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH "/opt/Qt/6.5.3/android_arm64_v8a" ${CMAKE_PREFIX_PATH})
 
-project(ControlApp VERSION 0.1 LANGUAGES CXX)
+project(RC_Controller VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

@@ -110,6 +110,13 @@ bool BluetoothClient::isConnected() const {
     return m_socket && m_socket->state() == QBluetoothSocket::SocketState::ConnectedState;
 }
 
+bool BluetoothClient::readyToSend() const {
+    if (m_socket && m_socket->bytesToWrite() == 0)
+        return true;
+    else
+        return false;
+}
+
 void BluetoothClient::send(const QByteArray &data) {
     if (!m_socket || m_socket->state() != QBluetoothSocket::SocketState::ConnectedState)
         return;

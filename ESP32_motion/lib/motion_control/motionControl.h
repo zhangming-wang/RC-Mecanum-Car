@@ -111,6 +111,7 @@ public:
     void set_speed_percent(float percent);
     float get_speed_percent();
     float get_max_speed();
+    float get_max_angular();
 
     void set_speed_plan_state(bool enable);
 

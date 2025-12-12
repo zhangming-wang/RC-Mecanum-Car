@@ -139,6 +139,10 @@ float MotionControl::get_max_speed() {
     return max_v_;
 }
 
+float MotionControl::get_max_angular() {
+    return max_w_;
+}
+
 void MotionControl::set_speed_percent(float percent) {
     percent = fabs(percent);
     if (percent >= 1)
