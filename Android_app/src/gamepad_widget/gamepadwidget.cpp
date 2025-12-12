@@ -50,10 +50,8 @@ GamepadWidget::GamepadWidget(QWidget *parent)
         qDebug() << "Received data:" << data;
     });
 
-    connect(this, &GamepadWidget::movedXY, this, &GamepadWidget::onJoystickMoved);
-    connect(this, &GamepadWidget::releasedXY, this, &GamepadWidget::onJoystickReleased);
-    connect(this, &GamepadWidget::movedZ, this, &GamepadWidget::onYawMoved);
-    connect(this, &GamepadWidget::releasedZ, this, &GamepadWidget::onYawReleased);
+    connect(this, &GamepadWidget::movedXY, this, [this](double x, double y) { onMoveChanged(); });
+    connect(this, &GamepadWidget::movedZ, this, [this](double z) { onMoveChanged(); });
     connect(this, &GamepadWidget::speedChanged, this, &GamepadWidget::onSpeedChanged);
 
     // 断开时闪烁：每500ms翻转一次
@@ -200,9 +198,9 @@ void GamepadWidget::updateTopCircleFromPos(const QPoint &pos) {
     rel = clampToCircle(rel, m_topRadius);
     m_knobXY = rel;
 
-    const qreal nx = (m_knobXY.x() / m_topRadius);
-    const qreal ny = (-m_knobXY.y() / m_topRadius);
-    emit movedXY(qBound(-1.0, nx, 1.0), qBound(-1.0, ny, 1.0));
+    m_nx = (m_knobXY.x() / m_topRadius);
+    m_ny = (-m_knobXY.y() / m_topRadius);
+    emit movedXY(qBound(-1.0, m_nx, 1.0), qBound(-1.0, m_ny, 1.0));
     update();
 }
 
@@ -217,8 +215,8 @@ void GamepadWidget::updateBottomCircleFromPos(const QPoint &pos) {
     const qreal t = (y - r.top()) / r.height();
     m_knobZ = t * 2.0 - 1.0;
 
-    const qreal z = qBound(-1.0, m_knobZ, 1.0);
-    emit movedZ(z);
+    m_nz = qBound(-1.0, m_knobZ, 1.0);
+    emit movedZ(m_nz);
     update();
 }
 
@@ -335,39 +333,18 @@ void GamepadWidget::setConnected(bool connected) {
     update();
 }
 
-void GamepadWidget::onJoystickMoved(double x, double y) {
+void GamepadWidget::onMoveChanged() {
     if (!m_bt->isConnected())
         return;
-
-    const QByteArray payload;
-    m_bt->send(payload);
-}
-
-void GamepadWidget::onJoystickReleased() {
-    if (!m_bt->isConnected())
-        return;
-
-    const QByteArray payload;
-    m_bt->send(payload);
-}
-
-void GamepadWidget::onYawMoved(double z) {
-    if (!m_bt->isConnected())
-        return;
-    const QByteArray payload;
-    m_bt->send(payload);
-}
-
-void GamepadWidget::onYawReleased() {
-    if (!m_bt->isConnected())
-        return;
-    const QByteArray payload;
+    const QByteArray payload = "x:" + QByteArray::number(m_nx, 'f', 2) +
+                               ",y:" + QByteArray::number(m_ny, 'f', 2) +
+                               ",z:" + QByteArray::number(m_nz, 'f', 2);
     m_bt->send(payload);
 }
 
 void GamepadWidget::onSpeedChanged(double percent) {
     if (!m_bt->isConnected())
         return;
-    const QByteArray payload;
+    const QByteArray payload = "v:" + QByteArray::number(percent, 'f', 2);
     m_bt->send(payload);
 }

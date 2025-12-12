@@ -35,11 +35,8 @@ protected:
     bool event(QEvent *event) override;
 
 private slots:
-    void onJoystickMoved(double x, double y);
-    void onJoystickReleased();
-    void onYawMoved(double z);
-    void onYawReleased();
     void onSpeedChanged(double percent);
+    void onMoveChanged();
 
 private:
     // 上方圆形摇杆（XY）
@@ -50,7 +47,6 @@ private:
     QRectF bottomCircleRect() const; // 下方圆形区域
     void updateBottomCircleFromPos(const QPoint &pos);
 
-private:
     // 布局尺寸
     QRectF m_topArea;    // 上方圆形摇杆区域
     QRectF m_bottomArea; // 下方圆形摇杆区域
@@ -63,13 +59,15 @@ private:
     // 上方圆形摇杆状态（XY）
     QPointF m_topCenter;
     qreal m_topRadius{90.0};
-    QPointF m_knobXY; // 相对中心
+    QPointF m_knobXY;              // 相对中心
+    double m_nx = 0.0, m_ny = 0.0; // -1..1
     bool m_pressedTop{false};
     qint64 m_topTouchId{-1};
 
     // 下方圆形摇杆状态（Z轴）
     QRectF m_bottomCircle;
     qreal m_knobZ{0.0}; // -1..1 垂直方向（上-1，下+1）
+    double m_nz = 0.0;  // -1..1
     bool m_pressedBottom{false};
     qint64 m_bottomTouchId{-1};
 

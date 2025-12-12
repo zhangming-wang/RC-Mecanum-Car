@@ -66,29 +66,25 @@ void BluetoothSlave::handle_cmd() {
             }
         }
 
-        auto cmd = cmd_map.find("type");
-        if (cmd != cmd_map.end() && motionControl_) {
-            if (cmd->second == "move") {
-                geometry_msgs__msg__Twist twist;
-                for (auto cmd : cmd_map) {
-                    if (cmd.first == "linear_x") {
-                        twist.linear.x = std::stod(cmd.second);
-                    } else if (cmd.first == "linear_y") {
-                        twist.linear.y = std::stod(cmd.second);
-                    } else if (cmd.first == "angular_z") {
-                        twist.angular.z = std::stod(cmd.second);
-                    }
+        if (motionControl_) {
+            double v_percent = -1.0;
+            geometry_msgs__msg__Twist twist;
+            for (auto cmd : cmd_map) {
+                if (cmd.first == "x") {
+                    twist.linear.x = std::stod(cmd.second);
+                } else if (cmd.first == "y") {
+                    twist.linear.y = std::stod(cmd.second);
+                } else if (cmd.first == "z") {
+                    twist.angular.z = std::stod(cmd.second);
+                } else if (cmd.first == "v") {
+                    v_percent = std::stod(cmd.second);
                 }
+            }
+
+            if (v_percent < 0.0) {
                 motionControl_->start_move(twist);
-            } else if (cmd->second == "set") {
-                double speed_percent = 1.0;
-                for (auto cmd : cmd_map) {
-                    if (cmd.first == "spd_percent") {
-                        speed_percent = std::stod(cmd.second);
-                        ;
-                    }
-                }
-                motionControl_->set_speed_percent(speed_percent);
+            } else {
+                motionControl_->set_speed_percent(v_percent);
             }
         }
     }
