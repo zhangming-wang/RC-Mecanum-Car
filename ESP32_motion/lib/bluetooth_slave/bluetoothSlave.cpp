@@ -71,11 +71,11 @@ void BluetoothSlave::handle_cmd() {
             geometry_msgs__msg__Twist twist;
             for (auto cmd : cmd_map) {
                 if (cmd.first == "x") {
-                    twist.linear.x = std::stod(cmd.second);
+                    twist.linear.x = std::stod(cmd.second) * motionControl_->get_max_speed();
                 } else if (cmd.first == "y") {
-                    twist.linear.y = std::stod(cmd.second);
+                    twist.linear.y = std::stod(cmd.second) * motionControl_->get_max_speed();
                 } else if (cmd.first == "z") {
-                    twist.angular.z = std::stod(cmd.second);
+                    twist.angular.z = std::stod(cmd.second) * motionControl_->get_max_speed();
                 } else if (cmd.first == "v") {
                     v_percent = std::stod(cmd.second);
                 }

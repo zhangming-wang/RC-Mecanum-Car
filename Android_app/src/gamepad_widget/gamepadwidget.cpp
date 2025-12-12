@@ -9,7 +9,7 @@ GamepadWidget::GamepadWidget(QWidget *parent)
 
     // 中间速度滑块（水平，0-100%）
     m_speedSlider->setRange(0, 100);
-    m_speedSlider->setValue(m_speedSlider->maximum());
+    m_speedSlider->setValue(0);
     // 风格统一：深色轨道 + 高亮橙色滑块，圆角，与整体一致
     m_speedSlider->setStyleSheet(
         "QSlider::groove:horizontal {\n"
@@ -39,9 +39,12 @@ GamepadWidget::GamepadWidget(QWidget *parent)
 
     connect(m_bt, &BluetoothClient::connected, this, [this]() {
         setConnected(true);
+        m_speedSlider->setValue(m_speedSlider->maximum()); // 连接时重置速度
+        emit speedChanged(1.0);
     });
     connect(m_bt, &BluetoothClient::disconnected, this, [this]() {
         setConnected(false);
+        m_speedSlider->setValue(0); // 断开时速度归零
     });
     connect(m_bt, &BluetoothClient::error, this, [](const QString &msg) {
         qWarning() << "Bluetooth error:" << msg;
