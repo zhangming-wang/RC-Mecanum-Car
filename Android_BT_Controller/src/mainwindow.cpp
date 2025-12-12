@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "Received data:" << data;
     });
 
-    // 启动后尝试连接指定的 ESP32 蓝牙名称
+    setFixedSize(618, 1000);
 }
 
 void MainWindow::setupUi() {
@@ -35,15 +35,18 @@ void MainWindow::setupUi() {
     connect(m_gamepad, &GamepadWidget::releasedXY, this, &MainWindow::onJoystickReleased);
     connect(m_gamepad, &GamepadWidget::movedZ, this, &MainWindow::onYawMoved);
     connect(m_gamepad, &GamepadWidget::releasedZ, this, &MainWindow::onYawReleased);
+    connect(m_gamepad, &GamepadWidget::speedChanged, this, &MainWindow::onSpeedChanged);
 
     root->addWidget(m_gamepad);
     root->setContentsMargins(0, 0, 0, 0);
 }
 
 void MainWindow::onBtConnected() {
+    m_gamepad->setConnected(true);
 }
 
 void MainWindow::onBtDisconnected() {
+    m_gamepad->setConnected(false);
 }
 
 void MainWindow::onJoystickMoved(double x, double y) {
@@ -70,6 +73,13 @@ void MainWindow::onYawMoved(double z) {
 }
 
 void MainWindow::onYawReleased() {
+    if (!m_bt->isConnected())
+        return;
+    const QByteArray payload;
+    m_bt->send(payload);
+}
+
+void MainWindow::onSpeedChanged(double percent) {
     if (!m_bt->isConnected())
         return;
     const QByteArray payload;

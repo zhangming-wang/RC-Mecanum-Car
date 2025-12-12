@@ -6,7 +6,6 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QPushButton>
-#include <QSlider>
 #include <QStatusBar>
 #include <QTimer>
 class MainWindow : public QMainWindow {
@@ -19,6 +18,7 @@ private slots:
     void onJoystickReleased();
     void onYawMoved(double z);
     void onYawReleased();
+    void onSpeedChanged(double percent);
 
     void onBtConnected();
     void onBtDisconnected();
