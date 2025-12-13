@@ -365,7 +365,8 @@ bool GamepadWidget::event(QEvent *event) {
                     if (m_lastIndicatorTapMs > 0 && (now - m_lastIndicatorTapMs) <= kDoubleTapIntervalMs) {
                         // 双击成立
                         m_lastIndicatorTapMs = 0;
-                        sendRestart();
+                        if (QMessageBox::question(this, tr("询问"), tr("是否切换到WIFI模式？"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+                            sendRestart();
                     } else {
                         m_lastIndicatorTapMs = now;
                         m_lastIndicatorTapPos = pos;

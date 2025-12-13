@@ -24,8 +24,23 @@ inline void test_ram() {
     // Serial.printf("Flash 型号: %s\n", flashModel);
 }
 
-inline void restart_device() {
+inline void restart_task(void *param) {
+    vTaskDelay(pdMS_TO_TICKS(500)); // 等待 100ms，确保当前逻辑跑完
     ESP.restart();
+}
+
+inline void restart_device_async() {
+    xTaskCreate(
+        restart_task,
+        "restart_task",
+        2048,
+        nullptr,
+        1,
+        nullptr);
+}
+
+inline void restart_device() {
+    restart_device_async();
 }
 
 enum CommunicationType {

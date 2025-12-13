@@ -45,3 +45,4 @@ log/
 tmp/
 install/
 .vscode/
+CMakeLists.txt.user

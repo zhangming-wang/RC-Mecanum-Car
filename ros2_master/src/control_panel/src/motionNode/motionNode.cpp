@@ -128,7 +128,7 @@ void MotionNode::_ask_motion_settings_service(MotionSettingsSrv::Request::Shared
                 }
             } else {
                 try_connect_cnt_ += 1;
-                if (try_connect_cnt_ >= 3) {
+                if (try_connect_cnt_ >= 1) {
                     emit connectChanged(false);
                     micro_ros_is_online_.store(false);
                 }
@@ -143,7 +143,7 @@ void MotionNode::_ask_motion_settings_service(MotionSettingsSrv::Request::Shared
     } else {
         if (request->mode == MotionService::Type::HeartBeat) {
             try_connect_cnt_ += 1;
-            if (try_connect_cnt_ >= 3) {
+            if (try_connect_cnt_ >= 1) {
                 emit connectChanged(false);
                 micro_ros_is_online_.store(false);
             }
