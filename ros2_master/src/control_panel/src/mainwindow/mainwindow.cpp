@@ -3,7 +3,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(std::make_shared<Ui::MainWindow>()) {
     ui->setupUi(this);
-    setWindowTitle("差速小车控制系统");
+    setWindowTitle("amr控制系统");
 
     motion_widget_ = std::make_shared<MotionWidget>();
 

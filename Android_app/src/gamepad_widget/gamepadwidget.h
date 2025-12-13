@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../bluetooth_client/bluetoothclient.h"
+#include <QDateTime>
 #include <QEvent>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -11,7 +13,6 @@
 #include <QTouchEvent>
 #include <QWidget>
 #include <QtMath>
-#include<QDateTime>
 
 class GamepadWidget : public QWidget {
     Q_OBJECT
@@ -33,6 +34,7 @@ protected:
     void mousePressEvent(QMouseEvent *e) override;
     void mouseMoveEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;
+    void mouseDoubleClickEvent(QMouseEvent *e) override;
     bool event(QEvent *event) override;
 
 private slots:
@@ -47,6 +49,9 @@ private:
     // 下方圆形摇杆（仅控制Z，垂直方向）
     QRectF bottomCircleRect() const; // 下方圆形区域
     void updateBottomCircleFromPos(const QPoint &pos);
+    QRectF indicatorRect() const;                  // 右侧状态指示器区域
+    bool pointInIndicator(const QPoint &pt) const; // 命中测试
+    void sendRestart();                            // 下发重启命令
 
     // 布局尺寸
     QRectF m_topArea;    // 上方圆形摇杆区域
@@ -86,6 +91,10 @@ private:
     int m_indicatorPad{0};
     QColor m_indicatorOnColor{QColor(0, 200, 70)};
     QColor m_indicatorOffColor{QColor(110, 110, 110)};
+
+    // 指示器双击（触控双击）检测
+    qint64 m_lastIndicatorTapMs{0};
+    QPoint m_lastIndicatorTapPos{0, 0};
 
     BluetoothClient *m_bt{nullptr};
 };

@@ -66,7 +66,6 @@ void BluetoothSlave::handle_cmd() {
         }
 
         if (motionControl_) {
-            double v_percent = -1.0;
             geometry_msgs__msg__Twist twist;
             for (auto cmd : cmd_map) {
                 if (cmd.first == "x") {
@@ -76,15 +75,14 @@ void BluetoothSlave::handle_cmd() {
                 } else if (cmd.first == "z") {
                     twist.angular.z = std::stod(cmd.second) * motionControl_->get_max_angular();
                 } else if (cmd.first == "v") {
-                    v_percent = std::stod(cmd.second);
+                    motionControl_->set_speed_percent(std::stod(cmd.second));
+                    break;
+                } else if (cmd.first == "r") {
+                    switch_to_wifi();
+                    break;
                 }
             }
-
-            if (v_percent < 0.0) {
-                motionControl_->start_move(twist);
-            } else {
-                motionControl_->set_speed_percent(v_percent);
-            }
+            motionControl_->start_move(twist);
         }
     }
 }

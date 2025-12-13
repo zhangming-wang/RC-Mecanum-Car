@@ -4,8 +4,8 @@ namespace MotionService {
     enum Type {
         Idle = 0,
         HeartBeat,
+        SwitchToBluetooth,
         Restart,
-
         Brake,
         StopMove,
         MoveFront,

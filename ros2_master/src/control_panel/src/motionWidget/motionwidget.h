@@ -62,6 +62,8 @@ public:
     void set_speed_plan_state();
     void set_enable_pub_motion_status();
 
+    void switch_to_bluetooth();
+
     void clear_plot();
 
     void on_gamepad_button_clicked();

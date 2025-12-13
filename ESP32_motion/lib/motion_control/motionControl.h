@@ -15,6 +15,7 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "system.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <deque>
@@ -25,7 +26,6 @@ extern "C" {
 #include <time.h>
 #include <utility>
 #include <vector>
-
 struct WheelSpeed {
     float left_front_v = 0;
     float left_back_v = 0;

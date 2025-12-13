@@ -1,5 +1,7 @@
 #include "motionNode.h"
 
+void (*serial_print)(const std::string &) = _serial_print;
+
 MotionNode::MotionNode() {
     allocator_ = rcl_get_default_allocator();
     motionControl = &MotionControl::get_instance();
@@ -391,8 +393,10 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
 
     if (request->mode == MotionService::Type::HeartBeat) {
         ;
+    } else if (request->mode == MotionService::Type::SwitchToBluetooth) {
+        switch_to_bluetooth();
     } else if (request->mode == MotionService::Type::Restart) {
-        instance.motionControl->restart_task();
+        restart_device();
     } else if (request->mode == MotionService::Type::Brake) {
         instance.motionControl->brake();
     } else if (request->mode == MotionService::Type::StopMove) {

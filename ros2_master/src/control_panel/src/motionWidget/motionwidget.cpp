@@ -13,7 +13,7 @@ MotionWidget::MotionWidget(QWidget *parent)
     main_splitter->setCollapsible(0, false);
     ui->widget_plot->layout()->addWidget(main_splitter);
     main_splitter->setSizes({1000, 0});
-
+    connect(ui->pushButton_switchToBluetooth, &QPushButton::clicked, this, &MotionWidget::switch_to_bluetooth);
     connect(ui->pushButton_restart, &QPushButton::clicked, this, &MotionWidget::restart);
     connect(ui->pushButton_brake, &QPushButton::clicked, this, &MotionWidget::brake);
     connect(ui->pushButton_stop_move, &QPushButton::clicked, this, &MotionWidget::stop_move);
@@ -368,11 +368,22 @@ void MotionWidget::_publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twi
     };
 }
 
+void MotionWidget::switch_to_bluetooth() {
+    if (QMessageBox::question(this, "切换模式", "是否确定切换到蓝牙模式？切换小车将立刻重启.", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+        MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
+        request->mode = MotionService::Type::SwitchToBluetooth;
+        auto cmd_string = _get_cmd_string_prefix() + "切换蓝牙指令";
+        _ask_motion_settings_service(request, cmd_string);
+    }
+}
+
 void MotionWidget::restart() {
-    MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
-    request->mode = MotionService::Type::Restart;
-    auto cmd_string = _get_cmd_string_prefix() + "重启指令";
-    _ask_motion_settings_service(request, cmd_string);
+    if (QMessageBox::question(this, "重启", "是否确定重启？", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+        MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
+        request->mode = MotionService::Type::Restart;
+        auto cmd_string = _get_cmd_string_prefix() + "重启指令";
+        _ask_motion_settings_service(request, cmd_string);
+    }
 }
 
 void MotionWidget::brake() {

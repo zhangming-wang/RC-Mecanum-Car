@@ -4,6 +4,8 @@
 namespace {
     // 计时/动画
     constexpr int kBlinkIntervalMs = 500;
+    // 触控双击（双击）判定间隔
+    constexpr int kDoubleTapIntervalMs = 350;
 
     // 摇杆圆与按钮
     constexpr qreal kMinCircleRadius = 8.0; // 圆形区域最小半径
@@ -179,10 +181,10 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
 
     // 右侧连接状态指示器：圆形灯（恢复之前样式）
     {
-        const int indicatorSize = m_indicatorSize;                        // 小圆形指示灯尺寸
-        const int pad = 0;                                                // 继续靠右：不留额外偏移
-        const int x = w - indicatorSize - qMax(0, (int)m_edgeMargin / 2); // 较小边距，视觉更靠右
-        const int y = (h - indicatorSize) / 2;
+        const QRectF r = indicatorRect();
+        const int x = (int)r.x();
+        const int y = (int)r.y();
+        const int indicatorSize = (int)r.width();
 
         // 外圈（灰色边框）
         p.setPen(QPen(QColor(120, 120, 120), 2));
@@ -225,6 +227,26 @@ void GamepadWidget::paintEvent(QPaintEvent *) {
     }
 }
 
+QRectF GamepadWidget::indicatorRect() const {
+    const int w = width();
+    const int h = height();
+    const int indicatorSize = m_indicatorSize;
+    const int x = w - indicatorSize - qMax(0, (int)m_edgeMargin / 2);
+    const int y = (h - indicatorSize) / 2;
+    return QRectF(x, y, indicatorSize, indicatorSize);
+}
+
+bool GamepadWidget::pointInIndicator(const QPoint &pt) const {
+    const QRectF r = indicatorRect();
+    if (!r.contains(pt))
+        return false;
+    const QPointF c = r.center();
+    const qreal dx = pt.x() - c.x();
+    const qreal dy = pt.y() - c.y();
+    const qreal rr = (r.width() * 0.5);
+    return (dx * dx + dy * dy) <= rr * rr;
+}
+
 QPointF GamepadWidget::clampToCircle(const QPointF &p, qreal radius) const {
     const qreal len = qSqrt(p.x() * p.x() + p.y() * p.y());
     if (len <= radius || len == 0)
@@ -262,6 +284,10 @@ void GamepadWidget::updateBottomCircleFromPos(const QPoint &pos) {
 
 void GamepadWidget::mousePressEvent(QMouseEvent *e) {
     const QPoint pt = e->pos();
+    // 若点击在指示器内，交由双击事件处理，不在此处消费
+    if (pointInIndicator(pt)) {
+        return;
+    }
     if (QLineF(pt, m_topCenter).length() <= m_topRadius * 1.1) {
         m_pressedTop = true;
         updateTopCircleFromPos(pt);
@@ -303,6 +329,18 @@ void GamepadWidget::mouseReleaseEvent(QMouseEvent *e) {
     update();
 }
 
+void GamepadWidget::mouseDoubleClickEvent(QMouseEvent *e) {
+    const QPoint pt = e->pos();
+    if (pointInIndicator(pt)) {
+        if (QMessageBox::question(this, tr("询问"), tr("是否切换到WIFI模式？"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+            sendRestart();
+            e->accept();
+            return;
+        }
+    }
+    QWidget::mouseDoubleClickEvent(e);
+}
+
 bool GamepadWidget::event(QEvent *event) {
     if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd) {
         auto *te = static_cast<QTouchEvent *>(event);
@@ -321,6 +359,20 @@ bool GamepadWidget::event(QEvent *event) {
             const qint64 id = pt.id();
             switch (pt.state()) {
             case QEventPoint::Pressed: {
+                // 指示器区域双击（双击）检测
+                if (pointInIndicator(pos)) {
+                    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+                    if (m_lastIndicatorTapMs > 0 && (now - m_lastIndicatorTapMs) <= kDoubleTapIntervalMs) {
+                        // 双击成立
+                        m_lastIndicatorTapMs = 0;
+                        sendRestart();
+                    } else {
+                        m_lastIndicatorTapMs = now;
+                        m_lastIndicatorTapPos = pos;
+                    }
+                    // 不继续传递给摇杆命中逻辑
+                    break;
+                }
                 if (QLineF(pos, m_topCenter).length() <= m_topRadius * 1.1) {
                     if (m_topTouchId == -1)
                         m_topTouchId = id;
@@ -343,6 +395,7 @@ bool GamepadWidget::event(QEvent *event) {
                 break;
             }
             case QEventPoint::Released: {
+                // 释放时不额外处理指示器逻辑（双击在 Pressed 阶段判定）
                 if (id == m_topTouchId) {
                     m_topTouchId = -1;
                     if (m_pressedTop) {
@@ -392,9 +445,8 @@ void GamepadWidget::onMoveChanged() {
     if (!m_bt->isConnected())
         return;
 
-    if (!m_bt->readyToSend()) {
+    if (!m_bt->readyToSend())
         return; // 丢弃本次发送
-    }
 
     const QByteArray payload = "x:" + QByteArray::number(-1 * m_ny, 'f', 3) +
                                ",y:" + QByteArray::number(m_nx, 'f', 3) +
@@ -405,6 +457,21 @@ void GamepadWidget::onMoveChanged() {
 void GamepadWidget::onSpeedChanged(double percent) {
     if (!m_bt->isConnected())
         return;
+
+    if (!m_bt->readyToSend())
+        return; // 丢弃本次发送
+
     const QByteArray payload = "v:" + QByteArray::number(percent, 'f', 3) + "\n";
+    m_bt->send(payload);
+}
+
+void GamepadWidget::sendRestart() {
+    if (!m_bt->isConnected())
+        return;
+
+    if (!m_bt->readyToSend())
+        return; // 丢弃本次发送
+
+    const QByteArray payload = "r:r\n";
     m_bt->send(payload);
 }
