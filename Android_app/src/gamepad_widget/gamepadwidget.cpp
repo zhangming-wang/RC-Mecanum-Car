@@ -75,8 +75,8 @@ GamepadWidget::GamepadWidget(QWidget *parent)
 
     connect(m_bt, &BluetoothClient::connected, this, [this]() {
         setConnected(true);
-        m_speedSlider->setValue(m_speedSlider->maximum()); // 连接时重置速度
-        emit speedChanged(1.0);
+        m_speedSlider->setValue(m_speedSlider->maximum() / 2); // 连接时重置速度
+        emit speedChanged(1.0 * m_speedSlider->value() / m_speedSlider->maximum());
     });
     connect(m_bt, &BluetoothClient::disconnected, this, [this]() {
         setConnected(false);

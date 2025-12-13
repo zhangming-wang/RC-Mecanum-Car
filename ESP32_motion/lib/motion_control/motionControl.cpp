@@ -18,7 +18,7 @@ MotionControl::MotionControl() {
 MotionControl::~MotionControl() {}
 
 MotionControl &MotionControl::get_instance() {
-    static MotionControl instance; // C++11 保证线程安全初始化
+    static MotionControl instance;
     return instance;
 }
 
@@ -31,7 +31,7 @@ void MotionControl::init() {
     set_milliseconds(milliseconds_);
     set_speed_plan_parms(max_v_, max_acc_, jerk_);
 
-    xTaskCreatePinnedToCore(control_loop, "control_loop", 8192, this, 0, NULL, 1);
+    xTaskCreatePinnedToCore(control_loop, "control_loop", 16384, this, 0, NULL, 1);
 }
 
 void MotionControl::start_task() {

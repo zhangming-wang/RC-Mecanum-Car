@@ -6,6 +6,10 @@
 #include <Arduino.h>
 
 CommunicationType communication_type = CommunicationType::WIFI;
+MotionControl *motionControl = nullptr;
+BluetoothSlave *bluetoothSlave = nullptr;
+MotionNode *motionNode = nullptr;
+bool connected = false;
 
 void setup() {
     Serial.begin(115200);
@@ -15,26 +19,24 @@ void setup() {
 
     test_ram();
 
-    auto communication_type = get_communication_type();
+    communication_type = get_communication_type();
     if (communication_type == CommunicationType::WIFI) {
         WiFi.mode(WIFI_STA);
         WiFi.persistent(false);
 
-        MotionNode &motionNode = MotionNode::get_instance();
-        motionNode.init(esp32_motion_node_name, esp32_motion_node_namespace, wifi_name, wifi_password, wifi_IP, micro_ros_port);
-        motionNode.start_task();
+        motionNode = &MotionNode::get_instance();
+        motionNode->init(esp32_motion_node_name, esp32_motion_node_namespace, wifi_name, wifi_password, wifi_IP, micro_ros_port);
+        motionNode->start_task();
     } else {
-        BluetoothSlave &btSlave = BluetoothSlave::get_instance();
-        btSlave.init(esp32_bluetooth_slave_name);
-        btSlave.start_task();
+        bluetoothSlave = &BluetoothSlave::get_instance();
+        bluetoothSlave->init(esp32_bluetooth_slave_name);
+        bluetoothSlave->start_task();
     }
 
-    MotionControl &motionControl = MotionControl::get_instance();
-    motionControl.init();
-    motionControl.start_task();
+    motionControl = &MotionControl::get_instance();
+    motionControl->init();
+    motionControl->start_task();
 }
-
-bool connected = false;
 
 void loop() {
     if (communication_type == CommunicationType::WIFI) {
@@ -62,5 +64,5 @@ void loop() {
             }
         }
     }
-    delay(1000);
+    delay(500);
 }

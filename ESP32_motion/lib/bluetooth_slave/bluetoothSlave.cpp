@@ -25,6 +25,10 @@ void BluetoothSlave::init(const std::string &name) {
     }
 }
 
+bool BluetoothSlave::connected() {
+    return SerialBT_->connected();
+}
+
 void BluetoothSlave::start_task() {
     if (enable_task_run == false && SerialBT_) {
         enable_task_run = true;
@@ -44,6 +48,7 @@ void BluetoothSlave::handle_cmd() {
     if (SerialBT_->available()) {
         String cmdStr = SerialBT_->readStringUntil('\n');
         cmdStr.trim(); // 去除空格/换行 读取单个指令字符
+        // SerialBT_->flush();
         // Serial.print("收到控制指令：");
         // Serial.println(cmdStr);
 
@@ -89,20 +94,22 @@ void BluetoothSlave::handle_cmd() {
 
 void bluetooth_slave_loop(void *args) {
     BluetoothSlave *bluetoothSlave = static_cast<BluetoothSlave *>(args);
+    bool is_connected = false;
     while (bluetoothSlave->enable_task_run) {
         if (bluetoothSlave->SerialBT_->connected()) {
-            if (bluetoothSlave->is_connected == false) {
-                bluetoothSlave->is_connected = true;
+            if (is_connected == false) {
+                bluetoothSlave->motionControl_->stop_move();
+                is_connected = true;
                 Serial.println("蓝牙设备已连接");
             }
             bluetoothSlave->handle_cmd();
-            // vTaskDelay(pdMS_TO_TICKS(10));
         } else {
-            if (bluetoothSlave->is_connected == true) {
-                bluetoothSlave->is_connected = false;
+            if (is_connected == true) {
+                bluetoothSlave->motionControl_->stop_move();
+                is_connected = false;
                 Serial.println("蓝牙设备已断开连接");
             }
-            vTaskDelay(pdMS_TO_TICKS(1000)); // 等待1000ms再检查连接状态
+            vTaskDelay(pdMS_TO_TICKS(500)); // 等待500ms再检查连接状态
         }
     }
     vTaskDelete(NULL);
