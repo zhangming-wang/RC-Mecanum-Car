@@ -47,7 +47,8 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->horizontalSlider_speed_percent, &QSlider::sliderReleased, this, &MotionWidget::set_speed_percent);
 
     connect(ui->checkBox_enable_pub_motion_status, &QCheckBox::stateChanged, this, &MotionWidget::set_enable_pub_motion_status);
-    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_cHanged);
+    connect(ui->checkBox_open_plot, &QCheckBox::stateChanged, this, &MotionWidget::on_open_plot_changed);
+    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_changed);
 
     connect(ui->checkBox_enable_speed_plan, &QCheckBox::stateChanged, this, &MotionWidget::set_speed_plan_state);
 
@@ -69,11 +70,14 @@ MotionWidget::MotionWidget(QWidget *parent)
 
     on_update_status();
     on_connect_changed(false);
+    on_open_plot_changed(false);
     // _update_odom_label();
     // on_graph_visible_changed();
     ui->tabWidget_motion->setCurrentIndex(0);
     ui->tabWidget_settings->setCurrentIndex(0);
     ui->checkBox_open_settings->setChecked(false);
+    ui->checkBox_open_plot->setChecked(false);
+
     ui->widget_plot->setVisible(false);
     ui->tabWidget_settings->setVisible(false);
 
@@ -86,8 +90,22 @@ MotionWidget::~MotionWidget() {
     delete ui;
 }
 
-void MotionWidget::on_settings_show_cHanged(bool show) {
+void MotionWidget::on_settings_show_changed(bool show) {
     ui->tabWidget_settings->setVisible(show);
+}
+
+void MotionWidget::on_open_plot_changed(bool open) {
+    if (open) {
+        ui->groupBox_plot->setVisible(true);
+        ui->widget_plot->setVisible(true);
+        ui->label_speed_msg->setVisible(true);
+        ui->label_pose_msg->setVisible(true);
+    } else {
+        ui->groupBox_plot->setVisible(false);
+        ui->widget_plot->setVisible(false);
+        ui->label_speed_msg->setVisible(false);
+        ui->label_pose_msg->setVisible(false);
+    }
 }
 
 void MotionWidget::_initTimer() {
@@ -778,18 +796,6 @@ void MotionWidget::on_recv_motion_settings_service_response(motion_settings_serv
 
         ui->spinBox_right_back_encoder_pin0->setValue(response->right_back_encoder_pina);
         ui->spinBox_right_back_encoder_pin1->setValue(response->right_back_encoder_pinb);
-    }
-
-    if (ui->checkBox_enable_pub_motion_status->isChecked()) {
-        ui->groupBox_plot->setVisible(true);
-        ui->widget_plot->setVisible(true);
-        ui->label_speed_msg->setVisible(true);
-        ui->label_pose_msg->setVisible(true);
-    } else {
-        ui->groupBox_plot->setVisible(false);
-        ui->widget_plot->setVisible(false);
-        ui->label_speed_msg->setVisible(false);
-        ui->label_pose_msg->setVisible(false);
     }
 }
 

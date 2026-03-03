@@ -2968,9 +2968,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox_enable_pub_motion_status">
+        <widget class="QCheckBox" name="checkBox_open_plot">
          <property name="text">
-          <string>打开调试</string>
+          <string>打开绘图</string>
          </property>
         </widget>
        </item>
@@ -3908,6 +3908,13 @@
        <layout class="QVBoxLayout" name="verticalLayout_14">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_19">
+          <item>
+           <widget class="QCheckBox" name="checkBox_enable_pub_motion_status">
+            <property name="text">
+             <string>打开调试</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QCheckBox" name="checkBox_dynamic_follow">
             <property name="sizePolicy">

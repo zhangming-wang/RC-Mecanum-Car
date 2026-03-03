@@ -34,7 +34,7 @@ QT_END_NAMESPACE
 class MotionWidget : public QWidget {
     Q_OBJECT
 
-public:
+  public:
     MotionWidget(QWidget *parent = nullptr);
     ~MotionWidget();
 
@@ -87,12 +87,13 @@ public:
     void on_update_status();
 
     void on_connect_changed(bool connect);
-    void on_settings_show_cHanged(bool show);
+    void on_settings_show_changed(bool show);
+    void on_open_plot_changed(bool open);
 
-signals:
+  signals:
     void nodeClosed();
 
-private:
+  private:
     Ui::MotionWidget *ui;
 
     std::shared_ptr<MotionNode> motionNode_;
