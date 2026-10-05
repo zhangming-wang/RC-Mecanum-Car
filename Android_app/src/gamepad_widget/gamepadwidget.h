@@ -40,6 +40,7 @@ protected:
 private slots:
     void onSpeedChanged(double percent);
     void onMoveChanged();
+    void onIndicatorSingleTap();
 
 private:
     // 上方圆形摇杆（XY）
@@ -51,7 +52,8 @@ private:
     void updateBottomCircleFromPos(const QPoint &pos);
     QRectF indicatorRect() const;                  // 右侧状态指示器区域
     bool pointInIndicator(const QPoint &pt) const; // 命中测试
-    void sendRestart();                            // 下发重启命令
+    void sendRestart();                            // 下发重启命令（切 WiFi）
+    void sendSwitchToPs3();                        // 下发切换 PS3 命令
 
     // 布局尺寸
     QRectF m_topArea;    // 上方圆形摇杆区域
@@ -92,9 +94,10 @@ private:
     QColor m_indicatorOnColor{QColor(0, 200, 70)};
     QColor m_indicatorOffColor{QColor(110, 110, 110)};
 
-    // 指示器双击（触控双击）检测
+    // 指示器单击/双击检测
     qint64 m_lastIndicatorTapMs{0};
     QPoint m_lastIndicatorTapPos{0, 0};
+    QTimer m_singleTapTimer; // 单击等待定时器（区分双击）
 
     BluetoothClient *m_bt{nullptr};
 };

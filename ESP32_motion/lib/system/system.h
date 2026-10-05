@@ -1,5 +1,6 @@
 #pragma once
 
+#include "default_mode_generated.h"
 #include <Arduino.h>
 #include <Preferences.h>
 
@@ -46,6 +47,7 @@ inline void restart_device() {
 enum CommunicationType {
     WIFI,
     BLUETOOTH,
+    PS3,
 };
 
 inline void switch_to_wifi() {
@@ -70,10 +72,21 @@ inline void switch_to_bluetooth() {
     restart_device();
 }
 
+inline void switch_to_ps3() {
+    Preferences preferences;
+    preferences.begin("comtype", false);
+    preferences.clear();
+    preferences.putInt("type", CommunicationType::PS3);
+    preferences.end();
+
+    delay(100);
+    restart_device();
+}
+
 inline CommunicationType get_communication_type() {
     Preferences preferences;
     preferences.begin("comtype", true);
-    int type = preferences.getInt("type", CommunicationType::WIFI);
+    int type = preferences.getInt("type", DEFAULT_COMMUNICATION_TYPE);
     preferences.end();
     return static_cast<CommunicationType>(type);
 }

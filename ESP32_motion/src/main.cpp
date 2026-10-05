@@ -1,6 +1,7 @@
 #include "bluetoothSlave.h"
 #include "motionControl.h"
 #include "motionNode.h"
+#include "ps3Host.h"
 #include "settings.h"
 #include "system.h"
 #include <Arduino.h>
@@ -9,6 +10,7 @@ CommunicationType communication_type = CommunicationType::WIFI;
 MotionControl *motionControl = nullptr;
 BluetoothSlave *bluetoothSlave = nullptr;
 MotionNode *motionNode = nullptr;
+Ps3Host *ps3Host = nullptr;
 bool connected = false;
 
 void setup() {
@@ -27,10 +29,14 @@ void setup() {
         motionNode = &MotionNode::get_instance();
         motionNode->init(esp32_motion_node_name, esp32_motion_node_namespace, wifi_name, wifi_password, wifi_IP, micro_ros_port);
         motionNode->start_task();
-    } else {
+    } else if (communication_type == CommunicationType::BLUETOOTH) {
         bluetoothSlave = &BluetoothSlave::get_instance();
         bluetoothSlave->init(esp32_bluetooth_slave_name);
         bluetoothSlave->start_task();
+    } else if (communication_type == CommunicationType::PS3) {
+        ps3Host = &Ps3Host::get_instance();
+        ps3Host->init(ps3_bluetooth_mac);
+        ps3Host->start_task();
     }
 
     motionControl = &MotionControl::get_instance();

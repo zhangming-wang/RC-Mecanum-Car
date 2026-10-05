@@ -30,5 +30,7 @@ namespace MotionService {
         ReadConfig,
         WriteConfig,
         SaveConfig,
+
+        SwitchToPS3,
     };
 }

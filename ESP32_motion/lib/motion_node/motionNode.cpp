@@ -394,8 +394,13 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
     if (request->mode == MotionService::Type::HeartBeat) {
         ;
     } else if (request->mode == MotionService::Type::SwitchToBluetooth) {
+        instance.motionControl->stop_move();
         switch_to_bluetooth();
+    } else if (request->mode == MotionService::Type::SwitchToPS3) {
+        instance.motionControl->stop_move();
+        switch_to_ps3();
     } else if (request->mode == MotionService::Type::Restart) {
+        instance.motionControl->stop_move();
         restart_device();
     } else if (request->mode == MotionService::Type::Brake) {
         instance.motionControl->brake();

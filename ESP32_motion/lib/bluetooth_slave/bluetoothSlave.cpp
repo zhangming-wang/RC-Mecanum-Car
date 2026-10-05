@@ -71,23 +71,33 @@ void BluetoothSlave::handle_cmd() {
         }
 
         if (motionControl_) {
-            geometry_msgs__msg__Twist twist;
+            geometry_msgs__msg__Twist twist = {};
+            bool has_motion = false;
             for (auto cmd : cmd_map) {
                 if (cmd.first == "x") {
                     twist.linear.x = std::stod(cmd.second) * motionControl_->get_max_speed();
+                    has_motion = true;
                 } else if (cmd.first == "y") {
                     twist.linear.y = std::stod(cmd.second) * motionControl_->get_max_speed();
+                    has_motion = true;
                 } else if (cmd.first == "z") {
                     twist.angular.z = std::stod(cmd.second) * motionControl_->get_max_angular();
+                    has_motion = true;
                 } else if (cmd.first == "v") {
                     motionControl_->set_speed_percent(std::stod(cmd.second));
-                    break;
                 } else if (cmd.first == "r") {
+                    motionControl_->stop_move();
                     switch_to_wifi();
-                    break;
+                    return;
+                } else if (cmd.first == "p") {
+                    motionControl_->stop_move();
+                    switch_to_ps3();
+                    return;
                 }
             }
-            motionControl_->start_move(twist);
+            if (has_motion) {
+                motionControl_->start_move(twist);
+            }
         }
     }
 }

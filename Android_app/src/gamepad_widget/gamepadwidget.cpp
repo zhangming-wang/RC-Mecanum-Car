@@ -104,6 +104,11 @@ GamepadWidget::GamepadWidget(QWidget *parent)
         }
     });
     m_blinkTimer.start();
+
+    // 指示器单击：等待双击判定间隔后触发，用于区分单击/双击
+    m_singleTapTimer.setSingleShot(true);
+    m_singleTapTimer.setInterval(kDoubleTapIntervalMs);
+    connect(&m_singleTapTimer, &QTimer::timeout, this, &GamepadWidget::onIndicatorSingleTap);
 }
 
 void GamepadWidget::paintEvent(QPaintEvent *) {
@@ -284,8 +289,9 @@ void GamepadWidget::updateBottomCircleFromPos(const QPoint &pos) {
 
 void GamepadWidget::mousePressEvent(QMouseEvent *e) {
     const QPoint pt = e->pos();
-    // 若点击在指示器内，交由双击事件处理，不在此处消费
+    // 指示器：启动单击等待（若随后发生双击会将其取消）
     if (pointInIndicator(pt)) {
+        m_singleTapTimer.start();
         return;
     }
     if (QLineF(pt, m_topCenter).length() <= m_topRadius * 1.1) {
@@ -332,6 +338,7 @@ void GamepadWidget::mouseReleaseEvent(QMouseEvent *e) {
 void GamepadWidget::mouseDoubleClickEvent(QMouseEvent *e) {
     const QPoint pt = e->pos();
     if (pointInIndicator(pt)) {
+        m_singleTapTimer.stop(); // 双击成立，取消单击动作
         if (QMessageBox::question(this, tr("询问"), tr("是否切换到WIFI模式？"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
             sendRestart();
             e->accept();
@@ -363,13 +370,15 @@ bool GamepadWidget::event(QEvent *event) {
                 if (pointInIndicator(pos)) {
                     const qint64 now = QDateTime::currentMSecsSinceEpoch();
                     if (m_lastIndicatorTapMs > 0 && (now - m_lastIndicatorTapMs) <= kDoubleTapIntervalMs) {
-                        // 双击成立
+                        // 双击成立 -> 切 WiFi，取消单击等待
                         m_lastIndicatorTapMs = 0;
+                        m_singleTapTimer.stop();
                         if (QMessageBox::question(this, tr("询问"), tr("是否切换到WIFI模式？"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
                             sendRestart();
                     } else {
                         m_lastIndicatorTapMs = now;
                         m_lastIndicatorTapPos = pos;
+                        m_singleTapTimer.start(); // 等待是否出现第二次点击
                     }
                     // 不继续传递给摇杆命中逻辑
                     break;
@@ -474,5 +483,22 @@ void GamepadWidget::sendRestart() {
         return; // 丢弃本次发送
 
     const QByteArray payload = "r:r\n";
+    m_bt->send(payload);
+}
+
+void GamepadWidget::onIndicatorSingleTap() {
+    if (QMessageBox::question(this, tr("询问"), tr("是否切换到PS3蓝牙模式？"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+        sendSwitchToPs3();
+    }
+}
+
+void GamepadWidget::sendSwitchToPs3() {
+    if (!m_bt->isConnected())
+        return;
+
+    if (!m_bt->readyToSend())
+        return; // 丢弃本次发送
+
+    const QByteArray payload = "p:1\n";
     m_bt->send(payload);
 }

@@ -1,4 +1,5 @@
 #include "motionControl.h"
+#include "defaults_generated.h"
 
 MotionControl::MotionControl() {
     speedPlan_ = std::make_shared<SpeedPlan>();
@@ -23,6 +24,7 @@ MotionControl &MotionControl::get_instance() {
 }
 
 void MotionControl::init() {
+    apply_generated_defaults(*this); // 先写入 JSON 默认值，NVS 有保存时会在下面覆盖
     _load_config();
     _load_params();
 
@@ -147,9 +149,19 @@ void MotionControl::set_speed_percent(float percent) {
     percent = fabs(percent);
     if (percent >= 1)
         percent = 1;
+
+    float old_max_v = max_v_, old_max_w = max_w_;
     speed_percent_ = percent;
     max_v_ = target_max_v_ * speed_percent_;
     max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+
+    // 让速度变化立即作用于当前目标：按新/旧上限比例缩放并重新规划
+    if (old_max_v > 0.0f && old_max_w > 0.0f) {
+        target_twist_.linear.x *= max_v_ / old_max_v;
+        target_twist_.linear.y *= max_v_ / old_max_v;
+        target_twist_.angular.z *= max_w_ / old_max_w;
+        _plan_wheel_speed();
+    }
 }
 
 float MotionControl::get_speed_percent() {

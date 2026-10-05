@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "comtype": "wifi",
+  "source": {
+    "service": "/esp32/motion_settings_service",
+    "timestamp": "2026-10-05T23:44:20"
+  },
+  "motion": {
+    "is_mecanum_wheel": true,
+    "wheel_width": 0.1850000023841858,
+    "track_width": 0.1850000023841858,
+    "milliseconds": 20,
+    "position_loop_milliseconds_cnt": 2,
+    "speed_loop_milliseconds_cnt": 5,
+    "enable_speed_plan": true,
+    "motor_enable_flags": 255,
+    "max_v": 0.37616410851478577,
+    "max_acc": 20.0,
+    "jerk": 10.0
+  },
+  "pid_loops": {
+    "position": {
+      "p": 1.0,
+      "i": 0.0,
+      "d": 0.0,
+      "max_total_integral": 1000.0
+    },
+    "line_speed": {
+      "p": 1.0,
+      "i": 0.0,
+      "d": 0.0,
+      "max_total_integral": 1000.0
+    },
+    "angle_speed": {
+      "p": 1.0,
+      "i": 0.0,
+      "d": 0.0,
+      "max_total_integral": 1000.0
+    }
+  },
+  "motors": {
+    "left_front": {
+      "motor_pina": 27,
+      "motor_pinb": 26,
+      "motor_pinpwm": 25,
+      "encoder_pina": 35,
+      "encoder_pinb": 34,
+      "wheel_diameter": 0.07999999821186066,
+      "pluses_per_revolution": 223,
+      "revolutions_per_minute": 250,
+      "pid": {
+        "p": 0.15000000596046448,
+        "i": 0.75,
+        "d": 0.0,
+        "max_total_integral": 1000.0
+      }
+    },
+    "left_back": {
+      "motor_pina": 14,
+      "motor_pinb": 12,
+      "motor_pinpwm": 13,
+      "encoder_pina": 33,
+      "encoder_pinb": 32,
+      "wheel_diameter": 0.07999999821186066,
+      "pluses_per_revolution": 223,
+      "revolutions_per_minute": 250,
+      "pid": {
+        "p": 0.15000000596046448,
+        "i": 0.75,
+        "d": 0.0,
+        "max_total_integral": 1000.0
+      }
+    },
+    "right_front": {
+      "motor_pina": 21,
+      "motor_pinb": 22,
+      "motor_pinpwm": 23,
+      "encoder_pina": 4,
+      "encoder_pinb": 5,
+      "wheel_diameter": 0.07999999821186066,
+      "pluses_per_revolution": 223,
+      "revolutions_per_minute": 250,
+      "pid": {
+        "p": 0.15000000596046448,
+        "i": 0.75,
+        "d": 0.0,
+        "max_total_integral": 1000.0
+      }
+    },
+    "right_back": {
+      "motor_pina": 19,
+      "motor_pinb": 18,
+      "motor_pinpwm": 17,
+      "encoder_pina": 15,
+      "encoder_pinb": 2,
+      "wheel_diameter": 0.07999999821186066,
+      "pluses_per_revolution": 223,
+      "revolutions_per_minute": 250,
+      "pid": {
+        "p": 0.15000000596046448,
+        "i": 0.75,
+        "d": 0.0,
+        "max_total_integral": 1000.0
+      }
+    }
+  }
+}
